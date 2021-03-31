@@ -1,0 +1,128 @@
+version: "2.1"
+
+networks:
+  multimedia_net:
+    name: multimedia_net
+    driver: bridge
+
+services:
+  radarr:
+    image: linuxserver/radarr
+    container_name: radarr
+    depends_on:
+      - jackett
+      - qbittorrent
+    environment:
+      - TZ=Europe/Madrid
+    volumes:
+      - #RADARR#/config:/config
+      - #RADARR#/movies:/movies
+      - #QBITTORRENT#/downloads:/downloads
+    networks:
+      multimedia_net:
+        aliases:
+          - radarr
+    ports:
+      - 7878:7878
+    restart: always
+
+  sonarr:
+    image: linuxserver/sonarr
+    container_name: sonarr
+    depends_on:
+      - jackett
+      - qbittorrent
+    environment:
+      - TZ=Europe/Madrid
+    volumes:
+      - #SONARR#/config:/config
+      - #SONARR#/tv:/tv
+      - #QBITTORRENT#/downloads:/downloads
+    networks:
+      multimedia_net:
+        aliases:
+          - sonarr
+    ports:
+      - 8989:8989
+    restart: always
+
+  bazarr:
+    image: linuxserver/bazarr
+    container_name: bazarr
+    environment:
+      - TZ=Europe/Madrid
+    volumes:
+      - #BAZARR#/config:/config
+      - #RADARR#/movies:/movies
+      - #SONARR#/tv:/tv
+    networks:
+      multimedia_net:
+        aliases:
+          - bazarr
+    ports:
+      - 6767:6767
+    restart: always
+
+  jackett:
+    image: linuxserver/jackett
+    container_name: jackett
+    environment:
+      - TZ=Europe/Madrid
+      - AUTO_UPDATE=true
+    volumes:
+      - #JACKETT#/config:/config
+      - #QBITTORRENT#/downloads:/downloads
+    networks:
+      multimedia_net:
+        aliases:
+          - jackett
+    ports:
+      - 9117:9117
+    restart: always
+
+  jellyfin:
+    image: linuxserver/jellyfin
+    container_name: jellyfin
+    environment:
+      - TZ=Europe/Madrid
+    volumes:
+      - #JELLYFIN#/config:/config
+      - #SONARR#/tv:/data/tvshows
+      - #RADARR#/movies:/data/movies
+      - /opt/vc/lib:/opt/vc/lib
+    networks:
+      multimedia_net:
+        aliases:
+          - jellyfin
+    ports:
+      - 8096:8096
+      - 8920:8920
+      - 7359:7359/udp
+      - 1900:1900/udp
+    devices:
+      - /dev/dri:/dev/dri
+      - /dev/vchiq:/dev/vchiq
+      - /dev/video10:/dev/video10
+      - /dev/video11:/dev/video11
+      - /dev/video12:/dev/video12
+    restart: always
+
+  qbittorrent:
+    image: linuxserver/qbittorrent
+    container_name: qbittorrent
+    environment:
+      - TZ=Europe/Madrid
+      - WEBUI_PORT=8080
+    volumes:
+      - #QBITTORRENT#/config:/config
+      - #QBITTORRENT#/downloads:/downloads
+    networks:
+      multimedia_net:
+        aliases:
+          - qbittorrent
+    ports:
+      - 6881:6881
+      - 6881:6881/udp
+      - 8080:8080
+    restart: always
+
